@@ -23,7 +23,12 @@ public:
     int getAvailableResourceAmount(char resource) { return available[resource]; }
     std::map<char, int> getAvailableResources() { return available; }
 
-    std::vector<std::string> getSafeSequence();
+    std::vector<std::string> getSafeSequence() {
+        if (safe_sequence.size() == 0) calculateSafeSequence();
+        return safe_sequence;
+    }
+
+    bool calculateSafeSequence();
 
     Process* getProcess(std::string p_id) { return processes[p_id]; }
     std::map<std::string, Process*> getAllProcesses() { return processes; }
@@ -63,8 +68,8 @@ private:
     std::map<char, int> max;
 };
 
-std::vector<std::string> System::getSafeSequence() {
-    if (safe_sequence.size() != 0) return safe_sequence;
+bool System::calculateSafeSequence() {
+    if (safe_sequence.size() != 0) return true;
 
     std::map<std::string, bool> finishes = {};
     bool go_to_step_4;
@@ -93,7 +98,7 @@ std::vector<std::string> System::getSafeSequence() {
         }
 
         if (go_to_step_4) {
-            if (finishes[it->first] == true) return safe_sequence;
+            if (finishes[it->first] == true) return true;
             std::advance(it, 1);
         } else if (go_to_step_3) {
             for (std::pair<char, int> resource_available: available)
@@ -104,7 +109,7 @@ std::vector<std::string> System::getSafeSequence() {
 
             processes.erase(it);
 
-            if (processes.size() == 0) break;
+            if (processes.size() == 0) return true;
 
             std::advance(it, 1);
             if (it->second == 0) it = processes.begin();
@@ -114,7 +119,7 @@ std::vector<std::string> System::getSafeSequence() {
         if (tries > (finishes.size() * finishes.size())) break;
     }
 
-    return safe_sequence;
+    return false;
 }
 
 System::System(std::string file_name) {
@@ -198,9 +203,15 @@ int main(int argc, char* argv[]) {
 
     System sys(argv[1]);
 
-    std::vector<std::string> safe_sequence = sys.getSafeSequence();
-    std::cout << "Safety Sequence: < ";
-    for (auto s: safe_sequence)
-        std::cout << s << ' ';
-    std::cout << ">" << std::endl;
+    bool isSafe = sys.calculateSafeSequence();
+    if (isSafe) {
+        std::cout << "System is in safe state!" << std::endl;
+
+        std::vector<std::string> safe_sequence = sys.getSafeSequence();
+        std::cout << "Safety Sequence: < ";
+        for (auto s: safe_sequence)
+            std::cout << s << ' ';
+        std::cout << ">" << std::endl;
+    } else
+        std::cout << "System is not in safe state!" << std::endl;
 }
